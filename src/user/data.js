@@ -7,7 +7,7 @@ var winston = require('winston');
 
 var db = require('../database');
 var plugins = require('../plugins');
-var utils = require('../../public/src/utils');
+var utils = require('../utils');
 
 module.exports = function (User) {
 	var iconBackgrounds = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3',
@@ -34,11 +34,20 @@ module.exports = function (User) {
 			}
 		}
 
-		if (!Array.isArray(uids) || !uids.length) {
+		// Eliminate duplicates and build ref table
+		var uniqueUids = uids.filter(function (uid, index) {
+			return index === uids.indexOf(uid);
+		});
+		var ref = uniqueUids.reduce(function (memo, cur, idx) {
+			memo[cur] = idx;
+			return memo;
+		}, {});
+
+		if (!Array.isArray(uniqueUids) || !uniqueUids.length) {
 			return callback(null, []);
 		}
 
-		var keys = uids.map(function (uid) {
+		var keys = uniqueUids.map(function (uid) {
 			return 'user:' + uid;
 		});
 
@@ -57,7 +66,17 @@ module.exports = function (User) {
 
 		async.waterfall([
 			function (next) {
-				db.getObjectsFields(keys, fields, next);
+				db.getObjectsFields(keys, fields, function (err, users) {
+					if (err) {
+						return callback(err);
+					}
+
+					users = uids.map(function (uid) {
+						return users[ref[uid]];
+					});
+
+					next(null, users);
+				});
 			},
 			function (users, next) {
 				modifyUserData(users, fieldsToRemove, next);
@@ -81,13 +100,32 @@ module.exports = function (User) {
 			return callback(null, []);
 		}
 
-		var keys = uids.map(function (uid) {
+		// Eliminate duplicates and build ref table
+		var uniqueUids = uids.filter(function (uid, index) {
+			return index === uids.indexOf(uid);
+		});
+		var ref = uniqueUids.reduce(function (memo, cur, idx) {
+			memo[cur] = idx;
+			return memo;
+		}, {});
+
+		var keys = uniqueUids.map(function (uid) {
 			return 'user:' + uid;
 		});
 
 		async.waterfall([
 			function (next) {
-				db.getObjects(keys, next);
+				db.getObjects(keys, function (err, users) {
+					if (err) {
+						return callback(err);
+					}
+
+					users = uids.map(function (uid) {
+						return users[ref[uid]];
+					});
+
+					next(null, users);
+				});
 			},
 			function (users, next) {
 				modifyUserData(users, [], next);

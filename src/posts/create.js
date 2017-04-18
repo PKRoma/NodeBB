@@ -9,7 +9,7 @@ var plugins = require('../plugins');
 var user = require('../user');
 var topics = require('../topics');
 var categories = require('../categories');
-var utils = require('../../public/src/utils');
+var utils = require('../utils');
 
 module.exports = function (Posts) {
 	Posts.create = function (data, callback) {
@@ -106,7 +106,7 @@ module.exports = function (Posts) {
 			},
 			function (postData, next) {
 				postData.isMain = isMain;
-				plugins.fireHook('action:post.save', _.clone(postData));
+				plugins.fireHook('action:post.save', { post: _.clone(postData) });
 				next(null, postData);
 			},
 		], callback);

@@ -11,7 +11,7 @@ var privileges = require('../privileges');
 var plugins = require('../plugins');
 var cache = require('./cache');
 var pubsub = require('../pubsub');
-var utils = require('../../public/src/utils');
+var utils = require('../utils');
 
 module.exports = function (Posts) {
 	pubsub.on('post:edit', function (pid) {
@@ -65,7 +65,7 @@ module.exports = function (Posts) {
 
 				postData.cid = results.topic.cid;
 				postData.topic = results.topic;
-				plugins.fireHook('action:post.edit', _.clone(postData));
+				plugins.fireHook('action:post.edit', { post: _.clone(postData), uid: data.uid });
 
 				cache.del(String(postData.pid));
 				pubsub.publish('post:edit', String(postData.pid));
@@ -136,7 +136,7 @@ module.exports = function (Posts) {
 				function (tags, next) {
 					topicData.tags = data.tags;
 					topicData.oldTitle = results.topic.title;
-					plugins.fireHook('action:topic.edit', topicData);
+					plugins.fireHook('action:topic.edit', { topic: topicData, uid: data.uid });
 					next(null, {
 						tid: tid,
 						cid: results.topic.cid,

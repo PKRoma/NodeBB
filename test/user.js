@@ -70,6 +70,38 @@ describe('User', function () {
 		});
 	});
 
+	describe('.uniqueUsername()', function () {
+		it('should deal with collisions', function (done) {
+			var users = [];
+			for (var i = 0; i < 10; i += 1) {
+				users.push({
+					username: 'Jane Doe',
+					password: 'abcdefghi',
+					email: 'jane.doe' + i + '@example.com',
+				});
+			}
+
+			async.series([
+				function (next) {
+					async.eachSeries(users, function (user, next) {
+						User.create(user, next);
+					}, next);
+				},
+				function (next) {
+					User.uniqueUsername({
+						username: 'Jane Doe',
+						userslug: 'jane-doe',
+					}, function (err, username) {
+						assert.ifError(err);
+
+						assert.strictEqual(username, 'Jane Doe 9');
+						done();
+					});
+				},
+			], done);
+		});
+	});
+
 	describe('.isModerator()', function () {
 		it('should return false', function (done) {
 			User.isModerator(testUid, testCid, function (err, isModerator) {
@@ -924,9 +956,14 @@ describe('User', function () {
 					assert.ifError(err);
 					socketUser.setModerationNote({ uid: adminUid }, { uid: testUid, note: 'this is a test user' }, function (err) {
 						assert.ifError(err);
-						User.getUserField(testUid, 'moderationNote', function (err, note) {
+						db.getSortedSetRevRange('uid:' + testUid + ':moderation:notes', 0, 0, function (err, notes) {
 							assert.ifError(err);
-							assert.equal(note, 'this is a test user');
+							notes = notes.map(function (noteData) {
+								return JSON.parse(noteData);
+							});
+							assert.equal(notes[0].note, 'this is a test user');
+							assert.equal(notes[0].uid, adminUid);
+							assert(notes[0].timestamp);
 							done();
 						});
 					});

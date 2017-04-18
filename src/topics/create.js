@@ -2,10 +2,11 @@
 'use strict';
 
 var async = require('async');
+var _ = require('underscore');
 var validator = require('validator');
 var S = require('string');
 var db = require('../database');
-var utils = require('../../public/src/utils');
+var utils = require('../utils');
 var plugins = require('../plugins');
 var analytics = require('../analytics');
 var user = require('../user');
@@ -81,11 +82,15 @@ module.exports = function (Topics) {
 				], next);
 			},
 			function (results, next) {
-				plugins.fireHook('action:topic.save', topicData);
+				plugins.fireHook('action:topic.save', { topic: _.clone(topicData) });
 				next(null, topicData.tid);
 			},
 		], callback);
 	};
+
+	function rtrim(str) {
+		return str.replace(/\s+$/g, '');
+	}
 
 	Topics.post = function (data, callback) {
 		var uid = data.uid;
@@ -101,7 +106,7 @@ module.exports = function (Topics) {
 			},
 			function (next) {
 				if (data.content) {
-					data.content = data.content.rtrim();
+					data.content = rtrim(data.content);
 				}
 				check(data.content, meta.config.minimumPostLength, meta.config.maximumPostLength, 'content-too-short', 'content-too-long', next);
 			},
@@ -173,7 +178,7 @@ module.exports = function (Topics) {
 				data.postData.index = 0;
 
 				analytics.increment(['topics', 'topics:byCid:' + data.topicData.cid]);
-				plugins.fireHook('action:topic.post', data.topicData);
+				plugins.fireHook('action:topic.post', { topic: data.topicData, post: data.postData });
 
 				if (parseInt(uid, 10)) {
 					user.notifications.sendTopicNotificationToFollowers(uid, data.topicData, data.postData);
@@ -234,7 +239,7 @@ module.exports = function (Topics) {
 			function (filteredData, next) {
 				content = filteredData.content || data.content;
 				if (content) {
-					content = content.rtrim();
+					content = rtrim(content);
 				}
 
 				check(content, meta.config.minimumPostLength, meta.config.maximumPostLength, 'content-too-short', 'content-too-long', next);
@@ -268,7 +273,7 @@ module.exports = function (Topics) {
 
 				Topics.notifyFollowers(postData, uid);
 				analytics.increment(['posts', 'posts:byCid:' + cid]);
-				plugins.fireHook('action:topic.reply', postData);
+				plugins.fireHook('action:topic.reply', { post: _.clone(postData) });
 
 				next(null, postData);
 			},
@@ -319,7 +324,7 @@ module.exports = function (Topics) {
 				postData.display_move_tools = true;
 				postData.selfPost = false;
 				postData.timestampISO = utils.toISOString(postData.timestamp);
-				postData.topic.title = validator.escape(String(postData.topic.title));
+				postData.topic.title = String(postData.topic.title);
 
 				next(null, postData);
 			},

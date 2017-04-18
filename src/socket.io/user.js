@@ -171,6 +171,7 @@ SocketUser.follow = function (socket, data, callback) {
 		function (_userData, next) {
 			userData = _userData;
 			notifications.create({
+				type: 'follow',
 				bodyShort: '[[notifications:user_started_following_you, ' + userData.username + ']]',
 				nid: 'follow:' + data.uid + ':uid:' + socket.uid,
 				from: socket.uid,
@@ -315,7 +316,7 @@ SocketUser.getUserByEmail = function (socket, email, callback) {
 };
 
 SocketUser.setModerationNote = function (socket, data, callback) {
-	if (!socket.uid || !data || !data.uid) {
+	if (!socket.uid || !data || !data.uid || !data.note) {
 		return callback(new Error('[[error:invalid-data]]'));
 	}
 
@@ -334,11 +335,13 @@ SocketUser.setModerationNote = function (socket, data, callback) {
 			if (!allowed) {
 				return next(new Error('[[error:no-privileges]]'));
 			}
-			if (data.note) {
-				user.setUserField(data.uid, 'moderationNote', data.note, next);
-			} else {
-				db.deleteObjectField('user:' + data.uid, 'moderationNote', next);
-			}
+
+			var note = {
+				uid: socket.uid,
+				note: data.note,
+				timestamp: Date.now(),
+			};
+			db.sortedSetAdd('uid:' + data.uid + ':moderation:notes', note.timestamp, JSON.stringify(note), next);
 		},
 	], callback);
 };

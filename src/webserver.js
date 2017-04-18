@@ -166,9 +166,7 @@ function setupFavicon(app) {
 }
 
 function setupCookie() {
-	var ttlDays = 1000 * 60 * 60 * 24 * (parseInt(meta.config.loginDays, 10) || 0);
-	var ttlSeconds = 1000 * (parseInt(meta.config.loginSeconds, 10) || 0);
-	var ttl = ttlSeconds || ttlDays || 1209600000; // Default to 14 days
+	var ttl = meta.getSessionTTLSeconds() * 1000;
 
 	var cookie = {
 		maxAge: ttl,
@@ -262,11 +260,11 @@ module.exports.testSocket = function (socketPath, callback) {
 	var file = require('./file');
 	async.series([
 		function (next) {
-			file.exists(socketPath, function (exists) {
+			file.exists(socketPath, function (err, exists) {
 				if (exists) {
 					next();
 				} else {
-					callback();
+					callback(err);
 				}
 			});
 		},

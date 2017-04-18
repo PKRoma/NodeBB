@@ -9,7 +9,6 @@ var express = require('express');
 var nconf = require('nconf');
 
 var db = require('./database');
-var utils = require('../public/src/utils');
 var hotswap = require('./hotswap');
 var file = require('./file');
 var languages = require('./languages');
@@ -160,9 +159,7 @@ var middleware;
 				});
 
 				// Filter out plugins with invalid paths
-				async.filter(paths, file.exists, function (paths) {
-					next(null, paths);
-				});
+				async.filter(paths, file.exists, next);
 			},
 			function (paths, next) {
 				async.map(paths, Plugins.loadPluginInfo, next);
@@ -176,7 +173,7 @@ var middleware;
 				if (plugin.templates || plugin.id.startsWith('nodebb-theme-')) {
 					winston.verbose('[plugins] Loading templates (' + plugin.id + ')');
 					var templatesPath = path.join(__dirname, '../node_modules', plugin.id, plugin.templates || 'templates');
-					utils.walk(templatesPath, function (err, pluginTemplates) {
+					file.walk(templatesPath, function (err, pluginTemplates) {
 						if (pluginTemplates) {
 							pluginTemplates.forEach(function (pluginTemplate) {
 								if (pluginTemplate.endsWith('.tpl')) {
@@ -342,11 +339,15 @@ var middleware;
 
 				async.filter(dirs, function (dir, callback) {
 					fs.stat(dir, function (err, stats) {
-						callback(!err && stats.isDirectory());
+						if (err) {
+							if (err.code === 'ENOENT') {
+								return callback(null, false);
+							}
+							return callback(err);
+						}
+						callback(null, stats.isDirectory());
 					});
-				}, function (plugins) {
-					next(null, plugins);
-				});
+				}, next);
 			},
 
 			function (files, next) {

@@ -83,6 +83,7 @@ define('forum/chats', [
 
 		Chats.addRenameHandler(ajaxify.data.roomId, $('[component="chat/room/name"]'));
 		Chats.addScrollHandler(ajaxify.data.roomId, ajaxify.data.uid, $('.chat-content'));
+		Chats.addCharactersLeftHandler(components.get('chat/input'));
 	};
 
 	Chats.addScrollHandler = function (roomId, uid, el) {
@@ -98,7 +99,11 @@ define('forum/chats', [
 			}
 			loading = true;
 			var start = parseInt($('.chat-content').children('[data-index]').first().attr('data-index'), 10) + 1;
-			socket.emit('modules.chats.getMessages', { roomId: roomId, uid: uid, start: start }, function (err, data) {
+			socket.emit('modules.chats.getMessages', {
+				roomId: roomId,
+				uid: uid,
+				start: start,
+			}, function (err, data) {
 				if (err) {
 					return app.alertError(err.message);
 				}
@@ -119,10 +124,16 @@ define('forum/chats', [
 		});
 	};
 
+	Chats.addCharactersLeftHandler = function (element) {
+		element.on('keyup', function () {
+			$('[component="chat/message/length"]').text(element.val().length);
+		});
+	};
+
 	Chats.addEditDeleteHandler = function (element, roomId) {
 		element.on('click', '[data-action="edit"]', function () {
 			var messageId = $(this).parents('[data-mid]').attr('data-mid');
-			var inputEl = components.get('chat/input');
+			var inputEl = $('[data-roomid="' + roomId + '"] [component="chat/input"]');
 			messages.prepEdit(inputEl, messageId, roomId);
 		}).on('click', '[data-action="delete"]', function () {
 			var messageId = $(this).parents('[data-mid]').attr('data-mid');
@@ -170,7 +181,10 @@ define('forum/chats', [
 			if (oldName === newName) {
 				return;
 			}
-			socket.emit('modules.chats.renameRoom', { roomId: roomId, newName: newName }, function (err) {
+			socket.emit('modules.chats.renameRoom', {
+				roomId: roomId,
+				newName: newName,
+			}, function (err) {
 				if (err) {
 					return app.alertError(err.message);
 				}
@@ -235,10 +249,15 @@ define('forum/chats', [
 			if (event.item === app.user.username) {
 				return;
 			}
-			socket.emit('modules.chats.addUserToRoom', { roomId: data.roomId, username: event.item }, function (err) {
+			socket.emit('modules.chats.addUserToRoom', {
+				roomId: data.roomId,
+				username: event.item,
+			}, function (err) {
 				if (err) {
 					app.alertError(err.message);
-					tagEl.tagsinput('remove', event.item, { nouser: true });
+					tagEl.tagsinput('remove', event.item, {
+						nouser: true,
+					});
 				}
 			});
 		});
@@ -262,7 +281,10 @@ define('forum/chats', [
 			if (event.options && event.options.nouser) {
 				return;
 			}
-			socket.emit('modules.chats.removeUserFromRoom', { roomId: data.roomId, username: event.item }, function (err) {
+			socket.emit('modules.chats.removeUserFromRoom', {
+				roomId: data.roomId,
+				username: event.item,
+			}, function (err) {
 				if (err) {
 					return app.alertError(err.message);
 				}
@@ -282,11 +304,17 @@ define('forum/chats', [
 			if (err) {
 				return app.alertError(err.message);
 			}
-			if (parseInt(roomId, 10) === ajaxify.data.roomId) {
+			if (parseInt(roomId, 10) === parseInt(ajaxify.data.roomId, 10)) {
 				ajaxify.go('user/' + ajaxify.data.userslug + '/chats');
 			} else {
 				el.remove();
 			}
+			require(['chat'], function (chat) {
+				var modal = chat.getModal(roomId);
+				if (modal.length) {
+					chat.close(modal);
+				}
+			});
 		});
 	};
 
@@ -319,7 +347,12 @@ define('forum/chats', [
 				} else {
 					var recentEl = components.get('chat/recent');
 					templates.parse('partials/chats/recent_room', {
-						rooms: { roomId: data.roomId, lastUser: data.message.fromUser, usernames: data.message.fromUser.username, unread: true },
+						rooms: {
+							roomId: data.roomId,
+							lastUser: data.message.fromUser,
+							usernames: data.message.fromUser.username,
+							unread: true,
+						},
 					}, function (html) {
 						translator.translate(html, function (translated) {
 							recentEl.prepend(translated);
@@ -341,7 +374,7 @@ define('forum/chats', [
 	};
 
 	Chats.resizeMainWindow = function () {
-		var	messagesList = $('.expanded-chat .chat-content');
+		var messagesList = $('.expanded-chat .chat-content');
 
 		if (messagesList.length) {
 			var margin = $('.expanded-chat ul').outerHeight(true) - $('.expanded-chat ul').height();

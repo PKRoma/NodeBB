@@ -104,8 +104,8 @@ define('forum/search', ['search', 'autocomplete'], function (searchModule, autoc
 				$('#post-time-filter').val(formData.timeFilter);
 			}
 
-			if (formData.sortBy) {
-				$('#post-sort-by').val(formData.sortBy);
+			if (formData.sortBy || ajaxify.data.searchDefaultSortBy) {
+				$('#post-sort-by').val(formData.sortBy || ajaxify.data.searchDefaultSortBy);
 				$('#post-sort-direction').val(formData.sortDirection);
 			}
 

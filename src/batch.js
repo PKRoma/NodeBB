@@ -4,7 +4,7 @@
 
 var async = require('async');
 var db = require('./database');
-var utils = require('../public/src/utils');
+var utils = require('./utils');
 
 var DEFAULT_BATCH_SIZE = 100;
 
@@ -19,6 +19,17 @@ exports.processSortedSet = function (setKey, process, options, callback) {
 
 	if (typeof process !== 'function') {
 		return callback(new Error('[[error:process-not-a-function]]'));
+	}
+
+	// Progress bar handling (upgrade scripts)
+	if (options.progress) {
+		db.sortedSetCard(setKey, function (err, total) {
+			if (err) {
+				// Unable to get total, do nothing.
+			} else {
+				options.progress.total = total;
+			}
+		});
 	}
 
 	// use the fast path if possible
@@ -53,6 +64,7 @@ exports.processSortedSet = function (setKey, process, options, callback) {
 					}
 					start += utils.isNumber(options.alwaysStartAt) ? options.alwaysStartAt : batch + 1;
 					stop = start + batch;
+
 					next();
 				});
 			});

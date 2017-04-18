@@ -2,7 +2,7 @@
 
 var async = require('async');
 var plugins = require('../plugins');
-var utils = require('../../public/src/utils');
+var utils = require('../utils');
 var db = require('./../database');
 
 module.exports = function (Groups) {
@@ -15,8 +15,6 @@ module.exports = function (Groups) {
 				return callback();
 			}
 			var groupObj = groupsData[0];
-
-			plugins.fireHook('action:group.destroy', groupObj);
 
 			async.parallel([
 				async.apply(db.delete, 'group:' + groupName),
@@ -44,6 +42,7 @@ module.exports = function (Groups) {
 					return callback(err);
 				}
 				Groups.resetCache();
+				plugins.fireHook('action:group.destroy', { group: groupObj });
 				callback();
 			});
 		});
