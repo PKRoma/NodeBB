@@ -41,6 +41,13 @@
 	"relays.state-2": "Active",
 	"relays.errors.invalid-url": "Please enter a valid URL",
 
+	"blocklists": "Third-party Blocklists",
+	"blocklists-help": "For the safety of you and your users, maintaining a blocklist is an essential part of any trust &amp; safety effort when working with content from outside the local moderation scope. NodeBB ships with some recommended defaults, and these can be customized here.",
+	"blocklists.url": "URL",
+	"blocklists.count": "Domains",
+	"blocklists.add": "Add New Blocklist",
+	"blocklists.add-help": "Enter the URL of the blocklist you would like to add. NodeBB understands blocklists that match the format used by <a href=\"https://iftas.org\">IFTAS</a>.",
+
 	"server-filtering": "Filtering",
 	"count": "This NodeBB is currently aware of <strong>%1</strong> server(s)",
 	"server.filter-help": "Specify servers you would like to bar from federating with your NodeBB. Alternatively, you may opt to selectively <em>allow</em> federation with specific servers, instead. Both options are supported, although they are mutually exclusive.",

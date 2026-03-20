@@ -126,3 +126,21 @@ Admin.activitypub.removeRelay = async (req, res) => {
 	await activitypub.relays.remove(url);
 	helpers.formatApiResponse(200, res, await activitypub.relays.list());
 };
+
+
+Admin.activitypub.addBlocklist = async (req, res, next) => {
+	const { url } = req.body;
+	if (!url) {
+		return next();
+	}
+
+	await activitypub.blocklists.add(url);
+	helpers.formatApiResponse(200, res, await activitypub.blocklists.list());
+};
+
+Admin.activitypub.removeBlocklist = async (req, res) => {
+	const { url } = req.params;
+
+	await activitypub.blocklists.remove(url);
+	helpers.formatApiResponse(200, res, await activitypub.blocklists.list());
+};
